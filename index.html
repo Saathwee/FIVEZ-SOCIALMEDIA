@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FIVEZ - Social App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    html, body { height: 100%; overflow-x: hidden; background: transparent; color: #fff; }
+
+    video#bgVideo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      z-index: -2;
+    }
+    #tsparticles {
+      position: fixed;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+    nav button {
+      background: transparent;
+      border: 1px solid #fff;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    nav button:hover {
+      background: #6200ea;
+      border-color: #6200ea;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.08);
+      padding: 30px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+
+    .form-toggle {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .form-toggle button {
+      background: #fff;
+      color: #6200ea;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .form-toggle button.active {
+      background: #6200ea;
+      color: #fff;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+    }
+    input, select {
+      background: #fff;
+      color: #000;
+    }
+    button.submit-btn {
+      background: #6200ea;
+      color: white;
+      font-weight: bold;
+    }
+
+    section { display: none; animation: fadeIn 0.5s ease-in; }
+    .chat-box {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #fff;
+      color: #000;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    #message { color: #ff8080; text-align: center; margin-top: 10px; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<video autoplay muted loop id="bgVideo">
+  <source src="https://cdn.pixabay.com/vimeo/902216831/social-media-icons-151473.mp4" type="video/mp4">
+</video>
+<div id="tsparticles"></div>
+
+<nav style="display:none" id="mainNav">
+  <button onclick="show('feed')">🏠 Feed</button>
+  <button onclick="show('friends')">👥 Friends</button>
+  <button onclick="show('chat')">💬 Chat</button>
+  <button onclick="show('audio')">🎙 Audio</button>
+</nav>
+
+<div class="container" id="authContainer">
+  <div class="form-toggle">
+    <button id="loginBtn" class="active" onclick="toggleForm('login')">Login</button>
+    <button id="registerBtn" onclick="toggleForm('register')">Register</button>
+    <button id="resetBtn" onclick="toggleForm('reset')">Reset Password</button>
+  </div>
+
+  <div id="loginForm">
+    <input id="loginUsername" placeholder="Username" />
+    <input id="loginPassword" type="password" placeholder="Password" />
+    <button class="submit-btn" onclick="loginUser()">Login</button>
+  </div>
+
+  <div id="registerForm" style="display:none">
+    <input id="regUsername" placeholder="Username" />
+    <input id="regPassword" type="password" placeholder="Password" />
+    <button class="submit-btn" onclick="registerUser()">Register</button>
+  </div>
+
+  <div id="resetForm" style="display:none">
+    <input id="resetUsername" placeholder="Username" />
+    <input id="newPassword" type="password" placeholder="New Password" />
+    <button class="submit-btn" onclick="resetPassword()">Reset Password</button>
+  </div>
+
+  <div id="message"></div>
+</div>
+
+<section id="feed" class="container">
+  <h2>📸 Post a Picture</h2>
+  <input type="file" id="imgUpload">
+  <button onclick="postImage()">Upload</button>
+  <div id="postFeed"></div>
+</section>
+
+<section id="friends" class="container">
+  <h2>👥 Friends</h2>
+  <input id="searchUser" placeholder="Search User">
+  <button onclick="sendRequest()">Send Friend Request</button>
+  <ul id="friendList"></ul>
+  <h3>Requests</h3>
+  <ul id="pendingList"></ul>
+</section>
+
+<section id="chat" class="container">
+  <h2>💬 Chat</h2>
+  <select id="chatUser"></select>
+  <div class="chat-box" id="chatBox"></div>
+  <input id="msgText" placeholder="Type a message">
+  <button onclick="sendMessage()">Send</button>
+</section>
+
+<section id="audio" class="container">
+  <h2>🎙 Audio Message</h2>
+  <button id="record">Record</button>
+  <button id="stop" disabled>Stop</button>
+  <div id="audioMessages"></div>
+</section>
+
+<script>
+let users = JSON.parse(localStorage.getItem("users") || '{}');
+let currentUser = null;
+
+function toggleForm(type) {
+  loginForm.style.display = type === 'login' ? 'block' : 'none';
+  registerForm.style.display = type === 'register' ? 'block' : 'none';
+  resetForm.style.display = type === 'reset' ? 'block' : 'none';
+
+  loginBtn.classList.toggle('active', type === 'login');
+  registerBtn.classList.toggle('active', type === 'register');
+  resetBtn.classList.toggle('active', type === 'reset');
+  message.innerText = '';
+}
+
+function registerUser() {
+  const user = regUsername.value.trim(), pass = regPassword.value.trim();
+  if (!user || !pass) return message.innerText = "Fill all fields";
+  if (users[user]) return message.innerText = 'User already exists!';
+  users[user] = { password: pass, friends: [], requests: [], messages: {}, posts: [] };
+  localStorage.setItem("users", JSON.stringify(users));
+  message.innerText = 'Registered! Now login.';
+  toggleForm('login');
+}
+
+function loginUser() {
+  const user = loginUsername.value.trim(), pass = loginPassword.value.trim();
+  if (!users[user]) return message.innerText = 'User not found.';
+  if (users[user].password !== pass) return message.innerText = 'Wrong password.';
+  currentUser = user;
+  authContainer.style.display = "none";
+  mainNav.style.display = "flex";
+  show('feed'); loadFeed(); loadFriends(); loadChat();
+}
+
+function resetPassword() {
+  const user = resetUsername.value.trim(), newPass = newPassword.value.trim();
+  if (!users[user]) return message.innerText = 'Username not found!';
+  users[user].password = newPass;
+  localStorage.setItem("users", JSON.stringify(users));
+  message.innerText = 'Password updated! Please login.';
+  toggleForm('login');
+}
+
+function show(id) {
+  document.querySelectorAll('section').forEach(sec => sec.style.display = "none");
+  document.getElementById(id).style.display = "block";
+}
+
+function postImage() {
+  const file = imgUpload.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const post = { id: Date.now(), img: e.target.result, likes: 0 };
+    users[currentUser].posts.unshift(post);
+    localStorage.setItem("users", JSON.stringify(users));
+    loadFeed();
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadFeed() {
+  postFeed.innerHTML = '';
+  Object.entries(users).forEach(([user, data]) => {
+    data.posts?.forEach(p => {
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <p><b>@${user}</b></p>
+        <img src="${p.img}" style="width:100%;border-radius:8px;">
+        <button onclick="likePost('${user}',${p.id})">❤️ Like (${p.likes})</button>
+        ${user === currentUser ? `<button onclick="deletePost(${p.id})">🗑 Delete</button>` : ''}
+      `;
+      postFeed.appendChild(div);
+    });
+  });
+}
+
+function deletePost(id) {
+  users[currentUser].posts = users[currentUser].posts.filter(p => p.id !== id);
+  localStorage.setItem("users", JSON.stringify(users));
+  loadFeed();
+}
+
+function likePost(user, id) {
+  const post = users[user].posts.find(p => p.id === id);
+  post.likes++;
+  localStorage.setItem("users", JSON.stringify(users));
+  loadFeed();
+}
+
+function sendRequest() {
+  const to = searchUser.value.trim();
+  if (!users[to] || to === currentUser || users[to].requests.includes(currentUser)) return;
+  users[to].requests.push(currentUser);
+  localStorage.setItem("users", JSON.stringify(users));
+  alert("Request sent!");
+}
+
+function loadFriends() {
+  const uniqueFriends = [...new Set(users[currentUser].friends)];
+  friendList.innerHTML = uniqueFriends.map(f => `<li>${f}</li>`).join('');
+  pendingList.innerHTML = users[currentUser].requests.map(r => `<li>${r} <button onclick="acceptRequest('${r}')">Accept</button></li>`).join('');
+}
+
+function acceptRequest(from) {
+  if (!users[currentUser].friends.includes(from)) {
+    users[currentUser].friends.push(from);
+  }
+  if (!users[from].friends.includes(currentUser)) {
+    users[from].friends.push(currentUser);
+  }
+  users[currentUser].requests = users[currentUser].requests.filter(r => r !== from);
+  localStorage.setItem("users", JSON.stringify(users));
+  loadFriends();
+}
+
+
+function loadChat() {
+  chatUser.innerHTML = users[currentUser].friends.map(f => `<option value="${f}">${f}</option>`).join('');
+  loadMessages();
+}
+
+function loadMessages() {
+  const f = chatUser.value;
+  chatBox.innerHTML = (users[currentUser].messages[f] || []).map(m => `<p><b>${m.sender}</b>: ${m.text}</p>`).join('');
+}
+
+function sendMessage() {
+  const f = chatUser.value;
+  const txt = msgText.value.trim(); if (!txt) return;
+  const msg = { sender: currentUser, text: txt };
+  users[currentUser].messages[f] = users[currentUser].messages[f] || [];
+  users[f].messages[currentUser] = users[f].messages[currentUser] || [];
+  users[currentUser].messages[f].push(msg);
+  users[f].messages[currentUser].push(msg);
+  localStorage.setItem("users", JSON.stringify(users));
+  msgText.value = '';
+  loadMessages();
+}
+
+let mediaRecorder, chunks = [];
+record.onclick = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.ondataavailable = e => chunks.push(e.data);
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(chunks);
+    const url = URL.createObjectURL(blob);
+    const audio = document.createElement("audio");
+    audio.src = url;
+    audio.controls = true;
+    audioMessages.appendChild(audio);
+    chunks = [];
+  };
+  mediaRecorder.start();
+  record.disabled = true;
+  stop.disabled = false;
+};
+stop.onclick = () => {
+  mediaRecorder.stop();
+  record.disabled = false;
+  stop.disabled = true;
+};
+
+tsParticles.load("tsparticles", {
+  particles: {
+    number: { value: 60 },
+    shape: { type: "image", image: [
+      { src: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", width: 20, height: 20 },
+      { src: "https://cdn-icons-png.flaticon.com/512/1077/1077035.png", width: 20, height: 20 },
+      { src: "https://cdn-icons-png.flaticon.com/512/727/727399.png", width: 20, height: 20 }
+    ] },
+    size: { value: 20 },
+    move: { enable: true, speed: 2 },
+    opacity: { value: 0.7 }
+  },
+  background: { color: { value: "#111" } },
+  fullScreen: { enable: true },
+});
+</script>
+</body>
+</html>
