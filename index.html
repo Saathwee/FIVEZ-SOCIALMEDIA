@@ -127,6 +127,7 @@
   <button onclick="show('friends')">👥 Friends</button>
   <button onclick="show('chat')">💬 Chat</button>
   <button onclick="show('audio')">🎙 Audio</button>
+  <button onclick="logout()" style="background:#ff4d4d;border-color:#ff4d4d;">🚪 Logout</button>
 </nav>
 
 <div class="container" id="authContainer">
@@ -232,6 +233,14 @@ function resetPassword() {
   toggleForm('login');
 }
 
+function logout() {
+  currentUser = null;
+  authContainer.style.display = "block";
+  mainNav.style.display = "none";
+  document.querySelectorAll('section').forEach(sec => sec.style.display = "none");
+  toggleForm('login');
+}
+
 function show(id) {
   document.querySelectorAll('section').forEach(sec => sec.style.display = "none");
   document.getElementById(id).style.display = "block";
@@ -293,17 +302,12 @@ function loadFriends() {
 }
 
 function acceptRequest(from) {
-  if (!users[currentUser].friends.includes(from)) {
-    users[currentUser].friends.push(from);
-  }
-  if (!users[from].friends.includes(currentUser)) {
-    users[from].friends.push(currentUser);
-  }
+  if (!users[currentUser].friends.includes(from)) users[currentUser].friends.push(from);
+  if (!users[from].friends.includes(currentUser)) users[from].friends.push(currentUser);
   users[currentUser].requests = users[currentUser].requests.filter(r => r !== from);
   localStorage.setItem("users", JSON.stringify(users));
   loadFriends();
 }
-
 
 function loadChat() {
   chatUser.innerHTML = users[currentUser].friends.map(f => `<option value="${f}">${f}</option>`).join('');
